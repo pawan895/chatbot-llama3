@@ -3,14 +3,18 @@ import React, { useState } from 'react';
 const Chatbot = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleSend = async () => {
     if (input.trim()) {
       const userMessage = { text: input, type: 'user' };
       setMessages([...messages, userMessage]);
       setInput('');
+      setLoading(true);
 
       const botResponse = await fetchModelResponse(input);
+      setLoading(false);
+
       if (botResponse) {
         setMessages((prevMessages) => [
           ...prevMessages,
@@ -21,36 +25,31 @@ const Chatbot = () => {
   };
 
   const fetchModelResponse = async (userInput) => {
-    const url = 'https://ai-llama-forwarder.pawankumar-b2020.workers.dev/';
-  
+    const url = import.meta.env.VITE_API_URL;
+
     const data = {
-      model: "gpt-4-turbo",
+      
       messages: [
-        { role: "system", content: "You are a helpful assistant" },
+        { role: "system", content: "You are a Pawan's AI Chatbot" },
         { role: "user", content: userInput }
       ]
     };
-  
+
     try {
       const response = await fetch(url, {
         method: 'POST',
-        mode: 'no-cors,
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(data),
       });
-  
-      console.log('Response Status:', response.status);
-      console.log('Response Headers:', response.headers);
-  
+
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
-  
+
       const jsonResponse = await response.json();
-      console.log('JSON Response:', jsonResponse);
-  
+
       if (jsonResponse.choices && jsonResponse.choices.length > 0) {
         return jsonResponse.choices[0]?.message?.content || 'No response from the bot.';
       } else {
@@ -61,14 +60,13 @@ const Chatbot = () => {
       return 'Sorry, there was a problem connecting to the server.';
     }
   };
-  
 
   return (
-    <div className="flex flex-col h-full mx-auto bg-gray-100 shadow-lg rounded-lg overflow-hidden">
+    <div className="flex flex-col h-full min-w-6xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
       <div className="flex items-center justify-between p-4 bg-blue-600">
-        <h1 className="text-white font-bold">AI Chatbot</h1>
+        <h1 className="text-white text-xl font-bold">Pawan's AI Chatbot</h1>
       </div>
-      <div className="flex-1 p-4 overflow-y-auto space-y-4">
+      <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-gray-50">
         {messages.map((msg, index) => (
           <div
             key={index}
@@ -85,6 +83,13 @@ const Chatbot = () => {
             </div>
           </div>
         ))}
+        {loading && (
+          <div className="flex justify-start">
+            <div className="max-w-xs lg:max-w-md p-3 rounded-lg text-sm bg-gray-200 text-gray-700 animate-pulse">
+              Thinking...
+            </div>
+          </div>
+        )}
       </div>
       <div className="bg-white p-4 border-t border-gray-200">
         <div className="flex">
@@ -99,8 +104,9 @@ const Chatbot = () => {
           <button
             className="ml-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring focus:ring-blue-300"
             onClick={handleSend}
+            disabled={loading}
           >
-            Send
+            {loading ? 'Sending...' : 'Send'}
           </button>
         </div>
       </div>
